@@ -80,7 +80,7 @@ class Cats {
     };
   }
 
-  // Function to crop the image (same as the rock cropping logic)
+  // Function to crop the image (using the previously provided cropImage logic)
   cropImage(image, callback) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -136,7 +136,7 @@ class Cats {
     ctx.restore();
   }
 
-  // Check collision between a particle and the image of the cat
+  // Check collision between a particle and the rock
   checkCollision(particle) {
     if (!this.visible || !this.image) return;
 
@@ -173,24 +173,6 @@ class Cats {
       dy > -this.height / 2 &&
       dy < this.height / 2
     );
-  }
-
-  // Boundary checks to ensure the cat doesn't move off-screen
-  constrainPosition(canvasWidth, canvasHeight) {
-    const halfWidth = this.width / 2;
-    const halfHeight = this.height / 2;
-
-    if (this.x < halfWidth) {
-      this.x = halfWidth;
-    } else if (this.x > canvasWidth - halfWidth) {
-      this.x = canvasWidth - halfWidth;
-    }
-
-    if (this.y < halfHeight) {
-      this.y = halfHeight;
-    } else if (this.y > canvasHeight - halfHeight) {
-      this.y = canvasHeight - halfHeight;
-    }
   }
 }
 
