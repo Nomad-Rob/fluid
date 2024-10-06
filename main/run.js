@@ -9,7 +9,6 @@ canvas.height = window.innerHeight;
 
 let simulator = new Simulator(canvas.width, canvas.height, numParticles);
 simulator.running = true;
-
 const fpsMonitor = new FPSMonitor();
 
 function loop() {
@@ -49,6 +48,8 @@ document.getElementById("startButton").addEventListener("click", () => {
   simulator.start();
 });
 
+let isDraggingCats = false;
+
 document.getElementById("pauseButton").addEventListener("click", () => {
   simulator.pause();
 });
@@ -60,7 +61,8 @@ document.getElementById("stepButton").addEventListener("click", () => {
 });
 
 document.getElementById("resetButton").addEventListener("click", () => {
-  simulator = new Simulator(canvas.width, canvas.height, numParticles);
+  // Refresh the page to reset everything
+  location.reload();
 });
 
 let collapseButton = document.getElementById("collapseButton");
@@ -105,8 +107,13 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("pointermove", (e) => {
-  simulator.mouseX = e.clientX;
-  simulator.mouseY = e.clientY;
+  if (isDraggingCats) {
+    simulator.cats.x = e.clientX;
+    simulator.cats.y = e.clientY;
+  } else {
+    simulator.mouseX = e.clientX;
+    simulator.mouseY = e.clientY;
+  }
 });
 
 window.addEventListener("pointerdown", (e) => {
@@ -116,13 +123,17 @@ window.addEventListener("pointerdown", (e) => {
   simulator.mousePrevX = e.clientX;
   simulator.mousePrevY = e.clientY;
 
-  if (e.button == 0) {
+  if (simulator.cats.visible && simulator.cats.isMouseOver(e.clientX, e.clientY)) {
+    isDraggingCats = true;
+  } else if (e.button == 0) {
     simulator.drag = true;
   }
 });
 
 window.addEventListener("pointerup", (e) => {
-  if (e.button == 0) {
+  if (isDraggingCats) {
+    isDraggingCats = false;
+  } else if (e.button == 0) {
     simulator.drag = false;
   }
 });
@@ -147,4 +158,9 @@ window.addEventListener("blur", () => {
   }
 
   simulator.drag = false;
+  
+});
+
+document.getElementById("toggleCatsButton").addEventListener("click", () => {
+  simulator.cats.visible = !simulator.cats.visible;
 });
