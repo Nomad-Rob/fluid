@@ -56,6 +56,21 @@ class Spring {
   }
 }
 
+class Cloud {
+  constructor(x, y, width) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.fillStyle = "rgba(200, 200, 255, 0.8)";
+    ctx.fillRect(this.x, this.y, this.width, 30);
+    ctx.restore();
+  }
+}
+
 class Cats {
   constructor(imageSrc, x, y) {
     this.originalImage = new Image();
@@ -79,7 +94,7 @@ class Cats {
       });
     };
   }
-
+  
   // Function to crop the image (using the previously provided cropImage logic)
   cropImage(image, callback) {
     const canvas = document.createElement("canvas");
@@ -211,6 +226,11 @@ class Simulator {
 
     // Initialize the cats
     this.cats = new Cats('cats.png', width / 2, height / 2);
+    
+    // Rain stuff
+    this.rainEnabled = false;
+    this.clouds = [];
+    this.maxRaindrops = numParticles * 2; // Max particle count (double original)
   
     for (let i = 0; i < this.numHashBuckets; i++) {
       this.particleListHeads.push(-1);
@@ -223,15 +243,7 @@ class Simulator {
 
     this.springHash = {};
   }
-
-  start() { this.running = true; }
-  pause() { this.running = false; }
-
-  resize(width, height) {
-    this.width = width;
-    this.height = height;
-  }
-
+  
   addParticles(count) {
     for (let i = 0; i < count; i++) {
       const posX = Math.random() * this.width;
@@ -287,6 +299,80 @@ class Simulator {
       }
     }
   }
+  
+  // Rain-related methods
+  addClouds() {
+    const cloudWidth = 150;
+    const numClouds = Math.floor(this.width / cloudWidth);
+
+    this.clouds = [];
+    for (let i = 0; i < numClouds; i++) {
+      const cloudX = i * cloudWidth + Math.random() * 50;
+      this.clouds.push(new Cloud(cloudX, 20, cloudWidth));
+    }
+  }
+  
+  // Remove particles closest to the screen edges
+  removeEdgeParticles() {
+    const edgeThreshold = 50; // Distance from the edge to consider "edge" particles
+    const numParticlesToRemove = 1; // Number of particles to remove each frame
+
+    const edgeParticles = this.particles.filter(p => {
+      return (
+        p.posX < edgeThreshold ||
+        p.posX > this.width - edgeThreshold ||
+        p.posY < edgeThreshold ||
+        p.posY > this.height - edgeThreshold
+      );
+    });
+
+    // Sort by closest to the edge first (could improve performance by not sorting for large counts)
+    edgeParticles.sort((a, b) => {
+      const distA = Math.min(a.posX, this.width - a.posX, a.posY, this.height - a.posY);
+      const distB = Math.min(b.posX, this.width - b.posX, b.posY, this.height - b.posY);
+      return distA - distB;
+    });
+
+    // Remove the closest particles to the edge
+    for (let i = 0; i < Math.min(numParticlesToRemove, edgeParticles.length); i++) {
+      const index = this.particles.indexOf(edgeParticles[i]);
+      if (index !== -1) {
+        this.particles.splice(index, 1); // Remove particle from array
+      }
+    }
+  }
+
+  removeClouds() {
+    this.clouds = [];
+  }
+
+  spawnRainParticle() {
+    // If we've reached the max particle limit, remove edge particles first
+    if (this.particles.length >= this.maxRaindrops) {
+      this.removeEdgeParticles();
+    }
+
+    if (this.particles.length < this.maxRaindrops) {
+      const randomCloud = this.clouds[Math.floor(Math.random() * this.clouds.length)];
+      const x = randomCloud.x + Math.random() * randomCloud.width;
+      const y = randomCloud.y + 30;
+      const velX = Math.random() * 0.5 - 0.25; // Small horizontal velocity
+      const velY = Math.random() * 2 + 1; // Vertical velocity
+      this.particles.push(new Particle(x, y, velX, velY));
+    }
+  }
+
+  updateRain() {
+    if (this.rainEnabled) {
+      this.spawnRainParticle();
+    }
+  }
+
+  drawRain(ctx) {
+    for (let cloud of this.clouds) {
+      cloud.draw(ctx);
+    }
+  }
 
   draw(ctx) {
     ctx.save();
@@ -338,6 +424,8 @@ class Simulator {
     const dragY = this.mouseY - this.mousePrevY;
     this.mousePrevX = this.mouseX;
     this.mousePrevY = this.mouseY;
+    
+    this.updateRain(); // Update rain if enabled
 
     if (!this.running) {
       return;

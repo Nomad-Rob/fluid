@@ -17,6 +17,8 @@ function loop() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   simulator.draw(ctx);
+  simulator.updateRain(); // Update rain each frame
+  simulator.drawRain(ctx);
 
   requestAnimationFrame(loop);
 }
@@ -163,4 +165,15 @@ window.addEventListener("blur", () => {
 
 document.getElementById("toggleCatsButton").addEventListener("click", () => {
   simulator.cats.visible = !simulator.cats.visible;
+});
+
+document.getElementById("toggleRainButton").addEventListener("click", () => {
+  simulator.rainEnabled = !simulator.rainEnabled;
+  document.getElementById("toggleRainButton").innerText = simulator.rainEnabled ? "Disable Rain" : "Enable Rain";
+
+  if (simulator.rainEnabled) {
+    simulator.addClouds();
+  } else {
+    simulator.removeClouds();
+  }
 });
